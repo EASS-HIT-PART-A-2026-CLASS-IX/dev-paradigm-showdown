@@ -39,6 +39,13 @@ flowchart LR
 - `db`: Postgres 16
 - `orchestration`: Docker Compose
 
+## Key Decisions
+
+- keep the frontend static and proxy-backed rather than adding a separate React build/runtime layer
+- keep the API private inside Compose and expose only the frontend to the host
+- use a dynamic frontend host port so the stack still starts on machines where `8000` or `8080` are already occupied
+- keep one smoke test script that validates the UI shell, the API proxy, and the vote flow end to end
+
 ## Project Layout
 
 ```text
@@ -54,7 +61,6 @@ flowchart LR
 │   ├── nginx.conf
 │   └── styles.css
 ├── docker-compose.yml
-├── BUILD_TRACE.md
 ├── AI_AGENT_TRACE.md
 ├── scripts/
 │   └── e2e_smoke.py
@@ -98,6 +104,16 @@ The smoke test validates:
 - a vote can be submitted
 - the follow-up fetch reflects the database write
 
+## Simplified Docker Model
+
+The Docker setup stays intentionally narrow:
+
+- `db` stores the votes
+- `api` waits for Postgres, creates the table, and seeds initial data
+- `frontend` serves the page and proxies `/api/*` to the API service
+
+There is no extra dev server, no extra reverse proxy layer, and no direct browser-to-database or browser-to-API configuration.
+
 ## Notes On Networking
 
 Only the frontend is published to the host.
@@ -110,8 +126,7 @@ This keeps the browser configuration simple and avoids CORS setup.
 
 ## Documentation
 
-- [BUILD_TRACE.md](./BUILD_TRACE.md): step-by-step record of how the solution was assembled and debugged
-- [AI_AGENT_TRACE.md](./AI_AGENT_TRACE.md): deeper runtime trace of prompt hierarchy, tool mediation, state transitions, environment feedback, and policy adaptation during the session
+- [AI_AGENT_TRACE.md](./AI_AGENT_TRACE.md): the main deep-dive document for how the agent, prompt stack, tool harness, runtime feedback, and validation loop produced the final solution
 
 ## What Makes This A Thin Slice
 

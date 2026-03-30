@@ -345,7 +345,7 @@ trace_event {
 | 08 | third execution | does stack become healthy? | rerun compose | db, api, frontend healthy | move to runtime tests |
 | 09 | proxy validation | is UI serving and proxying? | fetch `/` and `/api/paradigms` via frontend | HTML and JSON correct | run mutation test |
 | 10 | mutation validation | does write path really persist? | `POST /api/paradigms/{id}/vote` then re-fetch | vote increment observed | publish result |
-| 11 | documentation expansion | does repo teach the process? | write `BUILD_TRACE.md` and `AI_AGENT_TRACE.md` | docs created | publish to GitHub |
+| 11 | documentation expansion | does repo teach the process? | write and refine `README.md` and `AI_AGENT_TRACE.md` | docs created | publish to GitHub |
 | 12 | repo publication | can local state be externalized? | init git, commit, `gh repo create`, push | remote repo created | add smoke test and sync |
 | 13 | regression check | can this be rerun reliably? | add `scripts/e2e_smoke.py` and execute it | UI + E2E checks pass | system now self-validating |
 
@@ -579,3 +579,28 @@ The best compact model is this:
 - the cycle repeats until the task is verified
 
 That is the deeper operational picture behind this repository.
+
+## Final Repository Snapshot
+
+The final repository deliberately keeps the explanation surface small:
+
+- `README.md` explains the software, runtime shape, Docker workflow, and validation path
+- `AI_AGENT_TRACE.md` explains how the agent operated through prompts, tools, observations, and adaptation
+
+The runnable system remains:
+
+- `frontend`: one static page behind Nginx
+- `api`: one FastAPI service
+- `db`: one Postgres instance
+
+The validation path remains:
+
+```bash
+docker compose up --build -d
+python3 scripts/e2e_smoke.py
+```
+
+That separation is intentional:
+
+- `README.md` answers "what is this and how do I run it?"
+- `AI_AGENT_TRACE.md` answers "how did an agent actually produce and validate it?"

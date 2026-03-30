@@ -14,8 +14,7 @@ services:
       retries: 10
 
   api:
-    build:
-      context: ./backend
+    build: ./backend
     environment:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/paradigm_poll
     depends_on:
@@ -34,8 +33,7 @@ services:
       retries: 10
 
   frontend:
-    build:
-      context: ./frontend
+    build: ./frontend
     depends_on:
       api:
         condition: service_healthy
