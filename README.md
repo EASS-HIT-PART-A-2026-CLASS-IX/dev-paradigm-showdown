@@ -56,6 +56,8 @@ flowchart LR
 ├── docker-compose.yml
 ├── BUILD_TRACE.md
 ├── AI_AGENT_TRACE.md
+├── scripts/
+│   └── e2e_smoke.py
 └── README.md
 ```
 
@@ -109,7 +111,7 @@ This keeps the browser configuration simple and avoids CORS setup.
 ## Documentation
 
 - [BUILD_TRACE.md](./BUILD_TRACE.md): step-by-step record of how the solution was assembled and debugged
-- [AI_AGENT_TRACE.md](./AI_AGENT_TRACE.md): educational explanation of how an AI coding agent works through a harness, using this session as the concrete example
+- [AI_AGENT_TRACE.md](./AI_AGENT_TRACE.md): deeper runtime trace of prompt hierarchy, tool mediation, state transitions, environment feedback, and policy adaptation during the session
 
 ## What Makes This A Thin Slice
 
