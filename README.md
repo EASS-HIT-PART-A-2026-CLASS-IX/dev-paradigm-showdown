@@ -80,6 +80,22 @@ Then open the returned address in your browser.
 - `GET /api/paradigms`
 - `POST /api/paradigms/{id}/vote`
 
+## Validation
+
+Bring the stack up, then run the smoke test:
+
+```bash
+docker compose up --build -d
+python3 scripts/e2e_smoke.py
+```
+
+The smoke test validates:
+
+- the UI HTML is served
+- the paradigms list loads through the frontend proxy
+- a vote can be submitted
+- the follow-up fetch reflects the database write
+
 ## Notes On Networking
 
 Only the frontend is published to the host.
