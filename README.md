@@ -89,6 +89,8 @@ docker compose port frontend 80
 
 Then open the returned address in your browser.
 
+The Docker frontend also exposes the backend selector in the UI. By default it starts on the local Docker backend and also offers the deployed FastAPI Cloud backend.
+
 ### 2. Local frontend + local FastAPI dev backend
 
 Run the backend in FastAPI dev mode:
@@ -105,6 +107,11 @@ In a second terminal, run the frontend against that local backend:
 
 Open `http://127.0.0.1:3000`.
 
+The UI now includes a backend selector, so once the page is open you can switch between:
+
+- the local FastAPI backend
+- the deployed FastAPI Cloud backend
+
 ### 3. Local frontend + deployed FastAPI Cloud backend
 
 Run the frontend locally, but point it at the deployed backend:
@@ -114,6 +121,8 @@ Run the frontend locally, but point it at the deployed backend:
 ```
 
 Open `http://127.0.0.1:3000`.
+
+This starts with the cloud backend selected by default, but the UI selector still lets you switch back to the local backend.
 
 You can also point the frontend at any custom backend URL:
 

@@ -21,6 +21,7 @@ DEFAULT_CORS_ALLOW_ORIGINS = [
     "http://127.0.0.1:8080",
     "http://localhost:8080",
 ]
+DEFAULT_CORS_ALLOW_ORIGIN_REGEX = r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$"
 
 app = FastAPI(title="Minimal Paradigm Showdown")
 
@@ -46,10 +47,20 @@ def _get_cors_allow_origins():
     return DEFAULT_CORS_ALLOW_ORIGINS
 
 
+def _get_cors_allow_origin_regex():
+    configured = os.getenv("CORS_ALLOW_ORIGIN_REGEX")
+    if configured is not None:
+        normalized = configured.strip()
+        return normalized or None
+    return DEFAULT_CORS_ALLOW_ORIGIN_REGEX
+
+
 cors_allow_origins = _get_cors_allow_origins()
+cors_allow_origin_regex = _get_cors_allow_origin_regex()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_allow_origins,
+    allow_origin_regex=None if "*" in cors_allow_origins else cors_allow_origin_regex,
     allow_credentials="*" not in cors_allow_origins,
     allow_methods=["*"],
     allow_headers=["*"],
