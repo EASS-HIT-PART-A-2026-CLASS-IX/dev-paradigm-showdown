@@ -3,7 +3,7 @@ set -euo pipefail
 
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/_backend_common.sh"
 
-APP_ID="${FASTAPI_CLOUD_APP_ID:-$DEFAULT_FASTAPI_CLOUD_APP_ID}"
+APP_ID="${FASTAPI_CLOUD_APP_ID:-}"
 
 if [[ $# -gt 0 ]]; then
   APP_ID="$1"
@@ -12,10 +12,17 @@ fi
 
 ensure_backend_venv
 
-WHOAMI_OUTPUT="$("$FASTAPI_BIN" cloud whoami 2>&1 || true)"
-if [[ "$WHOAMI_OUTPUT" == *"No credentials found"* ]]; then
-  "$FASTAPI_BIN" login
+if [[ -z "${FASTAPI_CLOUD_TOKEN:-}" ]]; then
+  WHOAMI_OUTPUT="$("$FASTAPI_BIN" cloud whoami 2>&1 || true)"
+  if [[ "$WHOAMI_OUTPUT" == *"No credentials found"* ]]; then
+    "$FASTAPI_BIN" login
+  fi
 fi
 
 cd "$BACKEND_DIR"
-exec "$FASTAPI_BIN" deploy --app-id "$APP_ID" "$@"
+
+if [[ -n "$APP_ID" ]]; then
+  exec "$FASTAPI_BIN" deploy --app-id "$APP_ID" "$@"
+fi
+
+exec "$FASTAPI_BIN" deploy "$@"

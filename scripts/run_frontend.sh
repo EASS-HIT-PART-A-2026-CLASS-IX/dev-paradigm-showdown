@@ -6,7 +6,6 @@ FRONTEND_DIR="$ROOT_DIR/frontend"
 MODE="${1:-local}"
 FRONTEND_PORT="${FRONTEND_PORT:-3000}"
 DEFAULT_LOCAL_BACKEND_URL="http://127.0.0.1:${BACKEND_PORT:-8000}"
-DEFAULT_CLOUD_BACKEND_URL="https://yalla-balagan.fastapicloud.dev"
 
 usage() {
   cat <<'EOF'
@@ -33,10 +32,28 @@ resolve_local_api_base_url() {
 resolve_remote_api_base_url() {
   case "$MODE" in
     local)
-      printf '%s' "${REMOTE_API_BASE_URL:-$DEFAULT_CLOUD_BACKEND_URL}"
+      printf '%s' "${REMOTE_API_BASE_URL:-}"
       ;;
     cloud)
-      printf '%s' "${REMOTE_API_BASE_URL:-${API_BASE_URL:-$DEFAULT_CLOUD_BACKEND_URL}}"
+      if [[ -n "${REMOTE_API_BASE_URL:-}" ]]; then
+        printf '%s' "$REMOTE_API_BASE_URL"
+        return
+      fi
+      if [[ -n "${API_BASE_URL:-}" ]]; then
+        printf '%s' "$API_BASE_URL"
+        return
+      fi
+      cat >&2 <<'EOF'
+Cloud mode requires a deployed backend URL.
+
+Set one of:
+  API_BASE_URL=https://your-app.fastapicloud.dev
+  REMOTE_API_BASE_URL=https://your-app.fastapicloud.dev
+
+Or pass the URL directly:
+  ./scripts/run_frontend.sh https://your-app.fastapicloud.dev
+EOF
+      exit 1
       ;;
     http://*|https://*)
       printf '%s' "$MODE"
@@ -152,7 +169,7 @@ EOF
 echo "Frontend URL: http://127.0.0.1:${FRONTEND_PORT}"
 echo "Default backend: ${DEFAULT_BACKEND_KEY}"
 echo "Local backend URL: ${LOCAL_API_BASE_URL:-/api}"
-echo "Remote backend URL: ${REMOTE_API_BASE_URL}"
+echo "Remote backend URL: ${REMOTE_API_BASE_URL:-<not configured>}"
 
 cd "$TMP_DIR"
 exec python3 -m http.server "$FRONTEND_PORT" --bind 127.0.0.1

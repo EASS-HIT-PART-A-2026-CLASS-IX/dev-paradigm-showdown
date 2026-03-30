@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$ROOT_DIR/scripts/_backend_common.sh"
 
-CLOUD_BACKEND_URL="${CLOUD_BACKEND_URL:-https://yalla-balagan.fastapicloud.dev}"
+CLOUD_BACKEND_URL="${CLOUD_BACKEND_URL:-}"
 FRONTEND_PORT_CANDIDATES=(3000 3001 5173 4173 5500 8080)
 BACKEND_PORT_CANDIDATES=(8010 8011 8012 8013 8014 8015)
 
@@ -186,6 +186,15 @@ ensure_backend_venv
 start_backend_dev
 start_frontend_local_mode
 run_smoke "local frontend -> local FastAPI dev backend"
+
+if [[ -z "$CLOUD_BACKEND_URL" ]]; then
+  echo
+  echo "Skipping cloud backend checks because CLOUD_BACKEND_URL is not set."
+  echo "Set CLOUD_BACKEND_URL=https://your-app.fastapicloud.dev to test your deployed backend."
+  echo
+  echo "Local backend mode passed."
+  exit 0
+fi
 
 stop_frontend
 start_frontend_cloud_mode

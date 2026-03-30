@@ -109,6 +109,7 @@ function resolveBackendTargets() {
       label: target.label,
       apiBaseUrl: normalizeApiBaseUrl(target.apiBaseUrl ?? ""),
     }))
+    .filter((target) => target.key === "local" || target.apiBaseUrl)
     .filter((target) => {
       if (seenKeys.has(target.key)) {
         return false;

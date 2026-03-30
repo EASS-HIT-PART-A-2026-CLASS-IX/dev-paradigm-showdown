@@ -3,7 +3,7 @@ set -eu
 
 : "${FRONTEND_LOCAL_API_BASE_URL:=}"
 : "${FRONTEND_LOCAL_BACKEND_LABEL:=Local Docker backend}"
-: "${FRONTEND_REMOTE_API_BASE_URL:=https://yalla-balagan.fastapicloud.dev}"
+: "${FRONTEND_REMOTE_API_BASE_URL:=}"
 : "${FRONTEND_REMOTE_BACKEND_LABEL:=FastAPI Cloud backend}"
 : "${FRONTEND_DEFAULT_BACKEND_KEY:=local}"
 
