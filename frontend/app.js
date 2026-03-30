@@ -1,11 +1,16 @@
 const list = document.getElementById("paradigm-list");
+const backendTarget = document.getElementById("backend-target");
 const statusText = document.getElementById("status");
+const appConfig = window.APP_CONFIG ?? {};
+const apiBaseUrl = normalizeApiBaseUrl(appConfig.apiBaseUrl);
+
+renderBackendTarget();
 
 async function fetchParadigms() {
   setStatus("Loading...");
 
   try {
-    const response = await fetch("/api/paradigms");
+    const response = await fetch(buildApiUrl("/api/paradigms"));
     if (!response.ok) {
       throw new Error("Failed to load paradigms");
     }
@@ -14,7 +19,7 @@ async function fetchParadigms() {
     renderParadigms(paradigms);
     setStatus("");
   } catch (error) {
-    setStatus("Could not load data. Check that the API container is running.");
+    setStatus(`Could not load data from ${describeBackendTarget()}.`);
   }
 }
 
@@ -22,7 +27,7 @@ async function vote(id) {
   setStatus("Saving vote...");
 
   try {
-    const response = await fetch(`/api/paradigms/${id}/vote`, {
+    const response = await fetch(buildApiUrl(`/api/paradigms/${id}/vote`), {
       method: "POST",
     });
 
@@ -33,7 +38,7 @@ async function vote(id) {
     await fetchParadigms();
     setStatus("Vote recorded.");
   } catch (error) {
-    setStatus("Could not save your vote. Try again.");
+    setStatus(`Could not save your vote to ${describeBackendTarget()}.`);
   }
 }
 
@@ -67,6 +72,42 @@ function renderParadigms(paradigms) {
 
 function setStatus(message) {
   statusText.textContent = message;
+}
+
+function buildApiUrl(path) {
+  return apiBaseUrl ? `${apiBaseUrl}${path}` : path;
+}
+
+function normalizeApiBaseUrl(value) {
+  if (!value) {
+    return "";
+  }
+
+  return value.endsWith("/") ? value.slice(0, -1) : value;
+}
+
+function renderBackendTarget() {
+  if (!backendTarget) {
+    return;
+  }
+
+  backendTarget.textContent = `Backend: ${describeBackendTarget()}`;
+}
+
+function describeBackendTarget() {
+  if (appConfig.backendLabel && apiBaseUrl) {
+    return `${appConfig.backendLabel} (${apiBaseUrl})`;
+  }
+
+  if (appConfig.backendLabel) {
+    return appConfig.backendLabel;
+  }
+
+  if (apiBaseUrl) {
+    return apiBaseUrl;
+  }
+
+  return "local Docker proxy (/api)";
 }
 
 fetchParadigms();

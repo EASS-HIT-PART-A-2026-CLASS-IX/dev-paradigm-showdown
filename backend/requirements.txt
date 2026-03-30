@@ -1,2 +1,4 @@
-fastapi==0.117.1
+fastapi[standard]==0.117.1
+psycopg[binary]==3.3.3
+sqlmodel==0.0.37
 uvicorn[standard]==0.37.0

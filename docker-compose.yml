@@ -19,6 +19,9 @@ services:
 
   frontend:
     build: ./frontend
+    environment:
+      FRONTEND_API_BASE_URL: ${FRONTEND_API_BASE_URL:-}
+      FRONTEND_BACKEND_LABEL: ${FRONTEND_BACKEND_LABEL:-Local Docker backend}
     depends_on:
       api:
         condition: service_healthy
