@@ -229,9 +229,8 @@ This matters because an agent should not assume the environment matches the user
 
 The working design became:
 
-- `db` for persistence
-- `api` for business logic
-- `frontend` for the page and reverse proxy
+- `api` persists votes in a local SQLite table (`paradigms.db`)
+- `frontend` remains the single static page that proxies to the API
 
 That shape preserved the microservices requirement while staying as small as possible.
 
@@ -337,7 +336,7 @@ trace_event {
 | --- | --- | --- | --- | --- | --- |
 | 01 | request parse | Is there an existing codebase? | list files and cwd | workspace was empty | scaffold from scratch |
 | 02 | environment probe | Can Docker-based validation run? | check Docker, Python, Node | all available | choose Compose-first path |
-| 03 | architecture choice | Keep React/Vite or simplify? | evaluate stack shape | simplicity prioritized | use static frontend + Nginx |
+| 03 | architecture choice | Keep React/Vite or simplify? | evaluate stack shape | simplicity prioritized | use static frontend + Nginx and SQLite backend |
 | 04 | initial materialization | what files are minimally required? | write backend, frontend, Dockerfiles, Compose | project skeleton created | validate config next |
 | 05 | config validation | is compose structurally valid? | run `docker compose config` | config expanded correctly | proceed to startup |
 | 06 | first execution | will stack start unchanged? | run `docker compose up --build -d` | `8000` already allocated | remove API host port |
@@ -586,6 +585,12 @@ The final repository deliberately keeps the explanation surface small:
 
 - `README.md` explains the software, runtime shape, Docker workflow, and validation path
 - `AI_AGENT_TRACE.md` explains how the agent operated through prompts, tools, observations, and adaptation
+
+This branch deliberately restarts from scratch:
+
+- `frontend`: static page served by Nginx plus `/api` proxy
+- `api`: FastAPI with a SQLite table stored inside `backend/paradigms.db`
+- no external database service, just the `backend_data` volume
 
 The runnable system remains:
 

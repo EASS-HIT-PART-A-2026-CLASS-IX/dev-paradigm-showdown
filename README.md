@@ -39,12 +39,12 @@ flowchart LR
 - `db`: Postgres 16
 - `orchestration`: Docker Compose
 
-## Key Decisions
+## Minimal Stack
 
-- keep the frontend static and proxy-backed rather than adding a separate React build/runtime layer
-- keep the API private inside Compose and expose only the frontend to the host
-- use a dynamic frontend host port so the stack still starts on machines where `8000` or `8080` are already occupied
-- keep one smoke test script that validates the UI shell, the API proxy, and the vote flow end to end
+- `frontend`: static HTML served by Nginx and reverse-proxies `/api` to the backend
+- `api`: FastAPI talking to a local SQLite table stored in `backend/paradigms.db`
+- `volumes`: Compose mounts a named `backend_data` volume so the SQLite file survives restarts
+- no external database—this keeps the stack as lean as possible
 
 ## Project Layout
 
@@ -106,13 +106,11 @@ The smoke test validates:
 
 ## Simplified Docker Model
 
-The Docker setup stays intentionally narrow:
+- `api` builds from `backend/`, writes `paradigms.db`, and responds to `/api/paradigms` and `/api/paradigms/{id}/vote`
+- `frontend` builds from `frontend/` and proxies all `/api` traffic
+- `backend_data` volume stores the SQLite database so votes persist across restarts
 
-- `db` stores the votes
-- `api` waits for Postgres, creates the table, and seeds initial data
-- `frontend` serves the page and proxies `/api/*` to the API service
-
-There is no extra dev server, no extra reverse proxy layer, and no direct browser-to-database or browser-to-API configuration.
+There is zero extra service wiring: just two containers and one volume.
 
 ## Notes On Networking
 

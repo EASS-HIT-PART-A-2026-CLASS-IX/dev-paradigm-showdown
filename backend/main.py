@@ -1,84 +1,100 @@
 import os
-import time
+import sqlite3
+from pathlib import Path
+from threading import Lock
 
-from fastapi import Depends, FastAPI, HTTPException
-from sqlalchemy.exc import OperationalError
-from sqlmodel import Field, Session, SQLModel, create_engine, select
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+
+DB_PATH = Path(os.getenv("DB_PATH", Path(__file__).parent / "paradigms.db"))
+LOCK = Lock()
+
+app = FastAPI(title="Minimal Paradigm Showdown")
 
 
-class Paradigm(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
+class Paradigm(BaseModel):
+    id: int
     name: str
-    votes: int = Field(default=0)
+    votes: int
 
 
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql://postgres:postgres@db:5432/paradigm_poll",
-)
-engine = create_engine(DATABASE_URL, pool_pre_ping=True)
-
-app = FastAPI(title="Dev Paradigm Showdown API")
+def _get_connection():
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    return conn
 
 
-def get_session():
-    with Session(engine) as session:
-        yield session
+def _ensure_schema():
+    with LOCK:
+        conn = _get_connection()
+        with conn:
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS paradigms (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT UNIQUE NOT NULL,
+                    votes INTEGER NOT NULL DEFAULT 0
+                )
+                """
+            )
+        conn.close()
 
 
-def seed_data(session: Session) -> None:
-    if session.exec(select(Paradigm)).first():
-        return
+def seed_initial_rows():
+    with LOCK:
+        conn = _get_connection()
+        with conn:
+            if conn.execute("SELECT COUNT(*) FROM paradigms").fetchone()[0]:
+                return
+            conn.executemany(
+                "INSERT INTO paradigms (name) VALUES (?)",
+                [
+                    ("Functional Programming",),
+                    ("Object-Oriented Programming",),
+                    ("Event-Driven Architecture",),
+                ],
+            )
+        conn.close()
 
-    session.add_all(
-        [
-            Paradigm(name="Functional Programming"),
-            Paradigm(name="Object-Oriented Programming"),
-            Paradigm(name="Event-Driven Architecture"),
-        ]
-    )
-    session.commit()
 
-
-def init_db() -> None:
-    for attempt in range(30):
-        try:
-            SQLModel.metadata.create_all(engine)
-            with Session(engine) as session:
-                seed_data(session)
-            return
-        except OperationalError:
-            if attempt == 29:
-                raise
-            time.sleep(2)
+def fetch_all():
+    conn = _get_connection()
+    rows = conn.execute(
+        "SELECT id, name, votes FROM paradigms ORDER BY votes DESC, name ASC"
+    ).fetchall()
+    conn.close()
+    return [Paradigm(**dict(row)) for row in rows]
 
 
 @app.on_event("startup")
-def on_startup() -> None:
-    init_db()
+def startup():
+    _ensure_schema()
+    seed_initial_rows()
 
 
 @app.get("/health")
-def healthcheck() -> dict[str, str]:
-    return {"status": "ok"}
+def health():
+    return {"ok": True}
 
 
-@app.get("/api/paradigms", response_model=list[Paradigm])
-def get_paradigms(session: Session = Depends(get_session)) -> list[Paradigm]:
-    statement = select(Paradigm).order_by(Paradigm.votes.desc(), Paradigm.name.asc())
-    return list(session.exec(statement).all())
+@app.get("/api/paradigms")
+def list_paradigms():
+    return fetch_all()
 
 
-@app.post("/api/paradigms/{paradigm_id}/vote", response_model=Paradigm)
-def vote_for_paradigm(
-    paradigm_id: int, session: Session = Depends(get_session)
-) -> Paradigm:
-    paradigm = session.get(Paradigm, paradigm_id)
-    if paradigm is None:
-        raise HTTPException(status_code=404, detail="Paradigm not found")
-
-    paradigm.votes += 1
-    session.add(paradigm)
-    session.commit()
-    session.refresh(paradigm)
-    return paradigm
+@app.post("/api/paradigms/{paradigm_id}/vote")
+def vote_paradigm(paradigm_id: int):
+    with LOCK:
+        conn = _get_connection()
+        cursor = conn.execute(
+            "UPDATE paradigms SET votes = votes + 1 WHERE id = ?", (paradigm_id,)
+        )
+        if not cursor.rowcount:
+            conn.close()
+            raise HTTPException(status_code=404, detail="Paradigm not found")
+        conn.commit()
+        row = conn.execute(
+            "SELECT id, name, votes FROM paradigms WHERE id = ?", (paradigm_id,)
+        ).fetchone()
+        conn.close()
+    return Paradigm(**dict(row))

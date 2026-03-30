@@ -1,25 +1,10 @@
 services:
-  db:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_DB: paradigm_poll
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d paradigm_poll"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
   api:
     build: ./backend
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/paradigm_poll
-    depends_on:
-      db:
-        condition: service_healthy
+      DB_PATH: /data/paradigms.db
+    volumes:
+      - backend_data:/data
     healthcheck:
       test:
         [
@@ -41,4 +26,4 @@ services:
       - "80"
 
 volumes:
-  postgres_data:
+  backend_data:
